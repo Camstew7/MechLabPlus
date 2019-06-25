@@ -1,0 +1,27 @@
+tr {
+  border: 1px solid black
+}
+tbody {
+  border: 1px solid black
+}
+th {
+  border: 1px solid black
+}
+
+td {
+  border: 1px solid black
+}
+
+table{ 
+  border: 2px solid black
+}
+
+button {
+  border-radius: 5px;
+  height:100px;
+  width:200px
+}
+
+body {
+  background-color: rgb(0, 0, 0)
+}
