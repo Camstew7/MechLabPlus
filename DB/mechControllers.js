@@ -18,7 +18,7 @@ module.exports.findMech = findMech = (mechToFind, callback, findAll = false) => 
       }
     })
   } else {
-    Mech.find({mech: mechToFind}, (err, result) => {
+    Mech.find({Name: mechToFind}, (err, result) => {
       if(err){
         callback(err)
       } else {

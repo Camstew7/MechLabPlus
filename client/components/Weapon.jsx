@@ -1,12 +1,26 @@
 import React from 'react'
+import { useDrag } from 'react-dnd-cjs'
 
 var Weapon = (props) => {
+
+  const [{isDragging}, drag] = useDrag({
+    item: { 
+      type: 'weapon',
+      weapon: props.weapon
+    },
+    collect: monitor => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  })
+
   if(!props.mounted) {
     return (
     <tr
-    onClick = {() => {
-      props.handleWeaponSelect(props.id)
-    }}>
+    ref={drag}
+    style = {{
+      cursor: 'move'
+    }}
+    >
       <td>{props.weapon.name}</td>
       <td>{props.weapon.tons}</td>
       <td>{props.weapon.slots}</td>

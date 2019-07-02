@@ -2,152 +2,105 @@ import React from 'react'
 import ComponentsWindow from './ComponentsWindow.jsx'
 import BodyPart from './BodyPart.jsx'
 import MountedStats from './MountedStats.jsx'
+import { DndProvider } from 'react-dnd-cjs'
+import HTML5Backend from 'react-dnd-html5-backend-cjs'
+
 class MechLab extends React.Component {
   constructor(props) {
     super(props)
 
     this.state = {
-      activePart: '',
-      armour: '',
-      centerTorso: '',
-      guidance: "",
-      head: '',
-      heatsinks: "",
-      leftArm: '',
-      leftLeg: '',
-      leftTorso: '',
-      mech: '',
-      rightArm: '',
-      rightLeg: '',
-      rightTorso: '',
-      structure: '',
-      tonnage: '',
       weapons: [],
       mounted: [],
       faction: 'C'
     }
   }
-  selectActivePart (part) {
-    this.setState({
-      activePart: part
-    })
-  }
+
 
   clearAll () {
-    this.setState(this.props.mech[0])
+    this.setState(this.props.mech)
     this.setState({
       mounted: []
     })
   }
 
-  handleWeaponSelect (weapon) {
+  handleWeaponAdd (weapon, bodyPart) {
     var checkTonnage = (tonsToAdd) => {
-      let currentTonnage = this.state.tonnage.split('/').map((tons) => {
-        return Number(tons)
-      })
-      if((currentTonnage[0] + tonsToAdd) > currentTonnage[1]){
-        alert('Not enough Remaining Tonnage')
-        return false
-      } else {
-        return true
+      return this.state.TotalTons + tonsToAdd < this.state.MaxTons ? true : false
+    }
+    var checkSlots = (slotsToAdd) => {
+      let freeSlots = this.state.Loadout[bodyPart].Equipment.reduce((acc, cur) => {
+        let slots = cur.stats ? cur.stats.slots : cur.slots
+        return acc + slots
+      }, 0)
+      return freeSlots - slotsToAdd > 0 ? true : false
+    }
+    var checkHardpoints = () => {
+      if(this.state.Loadout[bodyPart].Hardpoints) {
+
       }
     }
-    var handleTonnageChange = (tons, state) => {
-      let startingTons = state.tonnage.split('/').map((tons) => {
-        return Number(tons)
-      })
-
-      startingTons[0] += tons
-
-      state.tonnage = startingTons.join('/')
+    
+    var handleHardpointChange = () => {
 
     }
-    if(((this.state[this.state.activePart].components.length + this.state.weapons[weapon].slots) <= this.state[this.state.activePart].slots) && checkTonnage(this.state.weapons[weapon].tons)) {
-      let cloneState = JSON.parse(JSON.stringify(this.state))
-      let thisPart = {}
-      let targetPart = this.state[this.state.activePart]
-      for(let key in targetPart){
-        thisPart[key] = targetPart[key]
-      }
-      for(let i = 0; i < this.state.weapons[weapon].slots; i++){
-        thisPart.components.push(this.state.weapons[weapon].name)
-      }
-      cloneState[this.state.activePart] = thisPart
-      cloneState.mounted.push(this.state.weapons[weapon])
 
-      handleTonnageChange(this.state.weapons[weapon].tons, cloneState)
-      this.setState(cloneState)
-    } else {
-     alert('not enough remaining slots')
+    var handleTonnageChange = (tons) => {
+      return this.state.TotalTons + tons
     }
+
+
+
+    if(!checkTonnage(weapon.tons)) {
+      alert('Not enough Tonnage remaining')
+      return
+    }
+    if(!checkSlots(weapon.slots)) {
+      alert('Not enough Slots remaining')
+      return
+    }
+    this.setState({
+      ...this.state,
+      TotalTons: handleTonnageChange(weapon.tons),
+      Loadout: {
+        ...this.state.Loadout,
+        [bodyPart]: {
+          ...this.state.Loadout[bodyPart],
+          Equipment: [...this.state.Loadout[bodyPart].Equipment, weapon]
+        }
+      }
+    }) 
   }
 
   componentDidMount() {
+
     var mapPropsToState = () => {
-      this.setState(this.props.mech[0])
+      let copyProps = JSON.parse(JSON.stringify(this.props.mech))
+      this.setState(copyProps)
     }
-    if(this.state.armour === ''){
+    if(!this.state.Class){
       mapPropsToState()
     }
 
-    var mapWeaponData = (weapons) => {
-      let mapped = []
-      let factionFilter = new RegExp('^' + this.state.faction)
-      var getData = (count) => {
-        if(count < weapons.length){
-          if(factionFilter.test(weapons[count].name)){
-            fetch(weapons[count].data)
-              .then((result) => {
-                return result.json()
-              })
-              .then((parsedWeaponData) => {
-                console.log('Loading:' + parsedWeaponData.weapon.name)
-                mapped.push(parsedWeaponData.weapon)
-                count++
-                getData(count)
-              })
-              .catch(err => console.log(err))
-          } else {
-            console.log('skipping wrong faction')
-            count++
-            getData(count)
-          }
-        } else {
-          console.log("All weapons loaded")
-          this.setState({
-            weapons: mapped
-          })
-        }
-      }
-      getData(0)
-    }
-
-    fetch('http://static.mwomercs.com/data/weapons/list.json')
+    fetch('http://localhost:3000/weapons')
       .then((response) => {
         return response.json()
       })
       .then((allWeaponsList) => {
-        console.log(allWeaponsList)
-        mapWeaponData(allWeaponsList.weapons)
+        this.setState({
+          weapons: allWeaponsList
+        })
       })
       .catch(err => console.log(err))
+
   }
 
-  // componentDidUpdate() {
-  //   var mapPropsToState = () => {
-  //     console.log(this.props.mech[0])
-  //     this.setState(this.props.mech[0])
-  //     console.log(this.state.head)
-  //   }
-  //   if(this.state.armour === ''){
-  //     mapPropsToState()
-  //   }
-  // }
 
   
   render() {
-    if(this.state.mech !== '') {
+    if(this.state.Name) {
       return(
+        
         <div style = {{
           border: '2px solid grey',
           height:'80%',
@@ -185,95 +138,88 @@ class MechLab extends React.Component {
           width:'300px'
         }}
         />
-        <h1>{this.state.mech.replace(/_/g, ' ')}</h1>
-        <h2>Tonnage: {this.state.tonnage}</h2>
-        <h2>Structure Type: {this.state.structure}</h2>
-        <h2>Armour Type: {this.state.armour}</h2>
-        <h2>Guidance Type: {this.state.guidance}</h2>
+        <h1>{this.state.Chassis.toUpperCase() + ' ' + this.state.Name.toUpperCase()} </h1>
+        <h2>Tonnage: {this.state.TotalTons + '/' + this.state.MaxTons}</h2>
+        <h2>Structure Type: {this.state.Upgrades.Structure.Type}</h2>
+        <h2>Armour Type: {this.state.Upgrades.Armor.Type}</h2>
+        <h2>Guidance Type: {this.state.Artemis ? 'Standard' : 'Artemis IV'}</h2>
+        <h2>Total Armour: {this.state.TotalArmor + '/' + this.state.MaxArmor}</h2>
+        <DndProvider backend={HTML5Backend}>
         <ComponentsWindow 
-          handleWeaponSelect = {this.handleWeaponSelect.bind(this)}
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
           weapons = {this.state.weapons}/>
         <div style = {{
           display:'grid',
           gridTemplateColumns: '10% 10% 10% 10% 10%',
           gridTemplateRows: '250px 375px px'
         }}>
-          <BodyPart 
-          partName = {'rightArm'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.rightArm}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+      
+          thisPart = {this.state.Loadout.right_arm}
           style = {{
             gridColumn:'1',
             gridRow:'2'
           }}
           />
-          <BodyPart 
-          partName = {'rightLeg'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.rightLeg}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+          thisPart = {this.state.Loadout.right_leg}
           style={{
             gridColumn:'2',
             gridRow:'3'
           }}
           />
-          <BodyPart 
-          partName = {'rightTorso'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.rightTorso}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+      
+          thisPart = {this.state.Loadout.right_torso}
           style={{
             gridColumn:'2',
             gridRow:'2'
           }}
           />
-          <BodyPart 
-          id='head'
-          partName = {'head'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.head}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)} 
+
+      
+          thisPart = {this.state.Loadout.head}
           style={{
             gridColumn:'3',
             gridRow:'1'
           }}
           />
-          <BodyPart 
-          partName = {'centerTorso'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.centerTorso}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+      
+          thisPart = {this.state.Loadout.centre_torso}
           style={{
             gridColumn:'3',
             gridRow:'2'
           }}
           />
-          <BodyPart 
-          partName = {'leftTorso'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.leftTorso}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+      
+          thisPart = {this.state.Loadout.left_torso}
           style={{
             gridColumn:'4',
             gridRow:'2'
           }}
           />
-          <BodyPart 
-          partName = {'leftLeg'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.leftLeg}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+      
+          thisPart = {this.state.Loadout.left_leg}
           style={{
             gridColumn:'4',
             gridRow:'3'
           }}
           />
-          <BodyPart 
-          partName = {'leftArm'}
-          selected = {this.state.activePart}
-          selectActivePart = {this.selectActivePart.bind(this)}
-          thisPart = {this.state.leftArm}
+          <BodyPart
+          handleWeaponAdd = {this.handleWeaponAdd.bind(this)}
+      
+          thisPart = {this.state.Loadout.left_arm}
           style={{
             gridColumn:'5',
             gridRow:'2'
@@ -283,7 +229,7 @@ class MechLab extends React.Component {
           <MountedStats 
           mounted = {this.state.mounted}
           />
-        
+        </DndProvider>
         </div>
 
       )

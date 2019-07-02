@@ -6,13 +6,19 @@ class App extends React.Component {
     super(props)
 
     this.state = {
-      currentMech: false
+      currentMech: false,
+      mechList:[]
     }
   }
 
   handleMechSelect(mechName) {
     if(mechName !== 'none'){
-      fetch(`http://localhost:3000/mechs?id=${mechName}`)
+      fetch(`http://localhost:3000/mechs?id=${mechName}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
       .then((result) => {
         return result.json()
       })
@@ -43,16 +49,34 @@ class App extends React.Component {
     alert('TODO EXPORT HASH')
   }
 
+  componentDidMount() {
+    fetch('http://localhost:3000/mechs')
+      .then((result) => {
+        return result.json()
+      })
+      .then((parsed) => {
+        let mechList = []
+        for(let key in parsed){
+          mechList.push(parsed[key])
+        }
+        this.setState({
+          mechList: mechList.sort()
+        })
+      })
+      .catch()
+  }
+
   render() {
     if(this.state.currentMech){
       return (
         <div>
           <h1>MechLab+</h1>
           <SelectMech 
+          mechs = {this.state.mechList}
           handleMechSelect = {this.handleMechSelect.bind(this)}
           />
           <MechLab 
-          mech = {this.state.currentMech}
+          mech = {this.state.currentMech[0]}
           save = {this.save.bind(this)}
           export = {this.export.bind(this)}
           />
@@ -61,6 +85,7 @@ class App extends React.Component {
     } else {
       return (
         <SelectMech 
+        mechs = {this.state.mechList}
         handleMechSelect = {this.handleMechSelect.bind(this)}
         />
       )

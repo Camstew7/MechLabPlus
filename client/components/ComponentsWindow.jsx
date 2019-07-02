@@ -1,16 +1,19 @@
 import React from 'react'
 import Weapon from './Weapon.jsx'
-class ComponentsWindow extends React.Component {
- constructor(props) {
-   super(props)
+import {useDrop} from 'react-dnd-cjs'
 
-   this.state ={
-     page: 'energy'
-   }
- }
+var ComponentsWindow = (props) => {
+  
+  const [collectedProps, drop] = useDrop({
+    accept: 'weapon',
+    drop(equipment) {
+      props.handleWeaponAdd(equipment.weapon, props.partName)
+    }
+  })
 
- render() {
-   if(this.props.weapons){
+  let page = 'Energy'
+
+  if(props.weapons){
     return (
       <div style = {{
         backgroundColor: '#535353',
@@ -18,35 +21,23 @@ class ComponentsWindow extends React.Component {
         top:'400px',
         marginRight:'100px'
       }}>
-        <table>
+        <table ref={drop}>
           <tbody>
             <tr>
-              <th onClick = {() => {
-                this.setState({
-                  page:'energy'
-                })
-              }}> Energy</th>
-              <th onClick = {() => {
-                this.setState({
-                  page:'ballistic'
-                })
-              }}>Ballistic</th>
-              <th onClick = {() => {
-                this.setState({
-                  page:'missile'
-                })
-              }}>Missile</th>
+              <th>Energy</th>
+              <th>Ballistic</th>
+              <th>Missile</th>
             </tr>
             <tr>
               <th>Name</th>
               <th>Tons</th>
               <th>Slots</th>
             </tr>
-              {this.props.weapons.map((weapon, index) => {
+              {props.weapons.map((weapon, index) => {
                 return(
                   <Weapon 
                   weapon = {weapon}
-                  handleWeaponSelect = {this.props.handleWeaponSelect}
+                  handleWeaponSelect = {props.handleWeaponSelect}
                   key = {index}
                   id = {index}
                   />
@@ -57,7 +48,6 @@ class ComponentsWindow extends React.Component {
       </div>
     )
   }
- }
 }
 
 export default ComponentsWindow
