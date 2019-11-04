@@ -28,7 +28,7 @@
     "cors": "^2.8.5",
     "express": "^4.15.0",
     "jquery": "^3.1.1",
-    "mongoose": "^4.9.6",
+    "mongoose": "^5.7.5",
     "react": "^16.4.1",
     "react-dnd-cjs": "^8.0.3",
     "react-dnd-html5-backend-cjs": "^8.0.3",
